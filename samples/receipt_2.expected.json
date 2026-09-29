@@ -1,0 +1,22 @@
+{
+  "is_receipt": true,
+  "merchant": "THE CURRY LEAF",
+  "date": "2026-09-28",
+  "currency": null,
+  "items": [
+    { "name": "Butter Naan", "quantity": 4, "unit_price": 60.00, "line_total": 240.00 },
+    { "name": "Paneer Tikka Masala", "quantity": 1, "unit_price": 320.00, "line_total": 320.00 },
+    { "name": "Dal Makhani", "quantity": 1, "unit_price": 260.00, "line_total": 260.00 },
+    { "name": "Jeera Rice", "quantity": 2, "unit_price": 180.00, "line_total": 360.00 },
+    { "name": "Sweet Lime Soda", "quantity": 3, "unit_price": 90.00, "line_total": 270.00 }
+  ],
+  "subtotal": 1450.00,
+  "charges": [
+    { "label": "Discount 10%", "kind": "discount", "rate_percent": 10, "amount": -145.00 },
+    { "label": "CGST 2.5%", "kind": "tax", "rate_percent": 2.5, "amount": 32.63 },
+    { "label": "SGST 2.5%", "kind": "tax", "rate_percent": 2.5, "amount": 32.63 },
+    { "label": "Round Off", "kind": "round_off", "rate_percent": null, "amount": -0.26 }
+  ],
+  "total": 1370.00,
+  "warnings": []
+}

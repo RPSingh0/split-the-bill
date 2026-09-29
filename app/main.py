@@ -34,7 +34,12 @@ async def api_error_handler(request: Request, exc: ApiError):
 @app.exception_handler(RequestValidationError)
 async def request_validation_handler(request: Request, exc: RequestValidationError):
     error = exc.errors()[0]
-    location = ".".join(str(part) for part in error["loc"])
+
+    parts = []
+    for part in error["loc"]:
+        parts.append(str(part))
+    location = ".".join(parts)
+
     return error_response(400, "BAD_REQUEST", f"{location}: {error['msg']}")
 
 

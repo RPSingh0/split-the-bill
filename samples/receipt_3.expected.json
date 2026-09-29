@@ -1,0 +1,21 @@
+{
+  "is_receipt": true,
+  "merchant": "BELLA NAPOLI PIZZERIA",
+  "date": "2026-09-27",
+  "currency": null,
+  "items": [
+    { "name": "Margherita Pizza", "quantity": 1, "unit_price": 450.00, "line_total": 450.00 },
+    { "name": "Garlic Bread", "quantity": 1, "unit_price": 180.00, "line_total": 180.00 },
+    { "name": "Penne Arrabbiata", "quantity": 1, "unit_price": 380.00, "line_total": 380.00 },
+    { "name": "Iced Tea", "quantity": 2, "unit_price": 60.00, "line_total": 120.00 }
+  ],
+  "subtotal": 1180.00,
+  "charges": [
+    { "label": "Service Charge 10%", "kind": "service_charge", "rate_percent": 10, "amount": 118.00 },
+    { "label": "CGST 2.5%", "kind": "tax", "rate_percent": 2.5, "amount": 32.45 },
+    { "label": "SGST 2.5%", "kind": "tax", "rate_percent": 2.5, "amount": 32.45 },
+    { "label": "Round Off", "kind": "round_off", "rate_percent": null, "amount": 0.10 }
+  ],
+  "total": 1363.00,
+  "warnings": []
+}
