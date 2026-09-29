@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     fastapi_api_key: str
     database_url: str
+    jwt_secret: str
 
 
 settings = Settings()
