@@ -1,7 +1,8 @@
+from datetime import date
 from decimal import Decimal
 
 from app.money import round_half_up
-from app.validation import error
+from app.validation import error, extract_issues
 
 
 def to_decimal(value):
@@ -37,6 +38,16 @@ def currency_or_inr(currency):
         return "INR"
 
     return currency
+
+
+def to_iso_date(text):
+    if text is None:
+        return None
+
+    try:
+        return date.fromisoformat(text).isoformat()
+    except ValueError:
+        return None
 
 
 def normalise_item(llm_item, index, issues):
@@ -90,6 +101,14 @@ def suggested_tip(llm_charges, issues):
     return total
 
 
+def total_without_tip(total, tip_paise):
+    total_paise = to_paise(total)
+    if total_paise is None:
+        return None
+
+    return total_paise - tip_paise
+
+
 def normalise(llm_output):
     issues = []
 
@@ -102,14 +121,25 @@ def normalise(llm_output):
     receipt = {
         "is_receipt": llm_output["is_receipt"],
         "merchant": llm_output["merchant"],
-        "bill_date": llm_output["date"],
+        "bill_date": to_iso_date(llm_output["date"]),
         "currency": currency_or_inr(llm_output["currency"]),
         "items": items,
         "subtotal_paise": to_paise(llm_output["subtotal"]),
         "charges": charges,
-        "total_paise": to_paise(llm_output["total"]),
+        "total_paise": total_without_tip(llm_output["total"], suggested_tip_paise),
         "suggested_tip_paise": suggested_tip_paise,
         "warnings": llm_output["warnings"],
     }
 
     return receipt, issues
+
+
+def build_extract_result(llm_output):
+    receipt, issues = normalise(llm_output)
+
+    if not receipt["is_receipt"]:
+        return {"receipt": receipt, "issues": extract_issues(receipt)}
+
+    issues.extend(extract_issues(receipt))
+
+    return {"receipt": receipt, "issues": issues}

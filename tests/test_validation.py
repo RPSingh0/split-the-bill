@@ -75,14 +75,18 @@ def test_normalise_converts_to_paise():
     assert receipt["suggested_tip_paise"] == 0
 
 
-def test_normalise_moves_tip_out_of_charges():
+def test_normalise_moves_tip_out_of_charges_and_total():
     llm_output = load_sample("receipt_2.expected.json")
     llm_output["charges"].append({"label": "Tip", "kind": "tip", "rate_percent": None, "amount": 100.00})
+    llm_output["total"] = 1470.00
 
     receipt, issues = normalise(llm_output)
 
     assert len(receipt["charges"]) == 4
     assert receipt["suggested_tip_paise"] == 10000
+    assert receipt["total_paise"] == 137000
+    assert issues == []
+    assert validate_receipt(receipt) == []
 
 
 def test_clean_receipt_has_no_issues():
