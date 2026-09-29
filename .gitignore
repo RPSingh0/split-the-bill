@@ -1,0 +1,44 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+env/
+venv/
+ENV/
+
+# Local secrets
+.env
+
+# Credentials
+key.json
+*.key.json
+
+# pyenv
+.python-version
+
+# uv: not committed, so every build resolves the latest commit of each step package
+uv.lock
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# PyCharm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Claude
+.claude
+.claude/*
+
+# scratch
+/references/
