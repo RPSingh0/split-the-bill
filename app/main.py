@@ -1,13 +1,14 @@
 import secrets
 from http import HTTPStatus
 
-from fastapi import FastAPI, Header, Request
+from fastapi import Depends, FastAPI, Header, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException
 
 from app.config import settings
 from app.errors import ApiError
+from app.routers.auth import router as auth_router
 
 app = FastAPI(title="Split the Bill API")
 
@@ -51,3 +52,6 @@ async def http_error_handler(request: Request, exc: HTTPException):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+app.include_router(auth_router, dependencies=[Depends(require_api_key)])

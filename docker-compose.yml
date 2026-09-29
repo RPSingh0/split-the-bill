@@ -16,7 +16,7 @@ services:
     command: uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       FASTAPI_API_KEY: dev-only-change-me
-      JWT_SECRET: dev-only-change-me
+      JWT_SECRET: dev-only-change-me-dev-only-change-me
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/split_the_bill
       WATCHFILES_FORCE_POLLING: "true"
     ports:
