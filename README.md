@@ -4,7 +4,7 @@ FastAPI service behind **Split the Bill**: a host photographs (or pastes) a rest
 
 | | |
 |---|---|
-| Live API docs | `<cloud-run-url>/docs` *(filled in after deployment)* |
+| Live API | <https://split-the-bill-api.onrender.com> — interactive docs at [`/docs`](https://split-the-bill-api.onrender.com/docs) |
 | Frontend repo | `<frontend-repo-url>` *(filled in after deployment)* |
 | AI usage notes | [AI_USAGE.md](AI_USAGE.md) |
 
@@ -16,7 +16,7 @@ FastAPI service behind **Split the Bill**: a host photographs (or pastes) a rest
 2. [Tech stack](#tech-stack)
 3. [Running locally](#running-locally)
 4. [Environment variables](#environment-variables)
-5. [Deploying to Cloud Run](#deploying-to-cloud-run)
+5. [Deploying to Render](#deploying-to-render)
 6. [API reference](#api-reference)
 7. [How it works](#how-it-works)
 8. [API key handling](#api-key-handling)
@@ -32,7 +32,7 @@ FastAPI service behind **Split the Bill**: a host photographs (or pastes) a rest
 ```mermaid
 flowchart LR
     B["Browser<br/>host and friends"] -->|"HTTPS<br/>login cookie, participant cookie<br/>X-LLM-Key on extract only"| N["Next.js on Vercel<br/>UI, Server Components,<br/>Server Actions, /api routes"]
-    N -->|"X-API-Key<br/>+ Authorization / X-Participant-Id / X-LLM-Key"| F["FastAPI on Cloud Run<br/>auth, extraction, validation,<br/>bills, claims, split"]
+    N -->|"X-API-Key<br/>+ Authorization / X-Participant-Id / X-LLM-Key"| F["FastAPI on Render<br/>auth, extraction, validation,<br/>bills, claims, split"]
     F -->|"SQL via Supabase session pooler"| D[("Supabase Postgres")]
     F -->|"user's key, one call per extraction"| L["OpenAI or Gemini"]
 ```
@@ -40,7 +40,7 @@ flowchart LR
 | Part | Role |
 |---|---|
 | **Next.js (Vercel)** | The only thing the browser talks to. Calls this API from server-side code only, adding the shared `X-API-Key`. |
-| **FastAPI (Cloud Run)** — this repo | The only database client and the only thing that calls an LLM. Owns accounts, extraction, validation, bills, claims and the split. |
+| **FastAPI (Render)** — this repo | The only database client and the only thing that calls an LLM. Owns accounts, extraction, validation, bills, claims and the split. |
 | **Supabase Postgres** | Stores users, bills, items, charges, participants and claims. The split is never stored — it is computed on every read. |
 | **OpenAI / Gemini** | Called once per extraction with the **user's own key**, sent per request. No LLM key exists in any environment. |
 
@@ -108,28 +108,29 @@ No LLM key appears anywhere in the environment.
 
 ---
 
-## Deploying to Cloud Run
+## Deploying to Render
 
-This deployment's Supabase project is in **Tokyo** (`ap-northeast-1`), so the API runs in the matching Cloud Run region, **`asia-northeast1`**. Keeping the API next to the database matters: every poll makes a few small queries.
+The API runs as a Render **web service** built from the [`Dockerfile`](Dockerfile), which starts uvicorn on the `$PORT` Render provides. The Supabase project is in Tokyo (`ap-northeast-1`), so the service runs in Render's closest region, **Singapore**.
 
 1. **Supabase** — run [`schema.sql`](schema.sql) once in the SQL editor, and copy the **session pooler** connection string (IPv4, port 5432). It can be used exactly as Supabase gives it.
-2. **Cloud Run** — deploy from source; Cloud Build builds the [`Dockerfile`](Dockerfile), which starts uvicorn on `$PORT`:
+2. **Render** — *New → Web Service*, connect this GitHub repo, and set:
 
-   ```bash
-   gcloud run deploy split-the-bill-api \
-     --source . \
-     --region asia-northeast1 \
-     --allow-unauthenticated \
-     --set-env-vars FASTAPI_API_KEY=<secret>,JWT_SECRET=<secret>,DATABASE_URL=<supabase-session-pooler-url>
-   ```
+   | Setting | Value |
+   |---|---|
+   | Language / Runtime | **Docker** (detected from the `Dockerfile`; no build or start command) |
+   | Branch | `master` |
+   | Region | Singapore |
+   | Instance type | Free |
+   | Health check path | `/health` |
+   | Auto-deploy | Your choice — Off means deploying by hand from the dashboard |
 
-   - `--allow-unauthenticated` is needed because Vercel calls the service directly; access is protected by `X-API-Key` instead.
-   - If a value contains a comma, pass the variables with `--env-vars-file` instead. Secrets can also be moved to Secret Manager with `--set-secrets`.
-   - [`.gcloudignore`](.gcloudignore) keeps `.env`, the virtualenv, the tests and everything git ignores out of the upload.
-3. **Vercel** — set `FASTAPI_URL` to the Cloud Run URL and `FASTAPI_API_KEY` to the same secret. Put the Vercel functions in the same area (Tokyo, `hnd1`).
-4. **Smoke test** — `GET <cloud-run-url>/health` returns `{"status":"ok"}`; `/docs` lists every endpoint.
+3. **Environment variables** on Render — only `FASTAPI_API_KEY`, `JWT_SECRET` and `DATABASE_URL` (see [above](#environment-variables)). Render provides `PORT`; no LLM key is ever set.
+4. **Vercel** — set `FASTAPI_URL` to the Render URL and `FASTAPI_API_KEY` to the same secret, with the functions in Singapore (`sin1`), next to the API.
+5. **Smoke test** — `GET /health` returns `{"status":"ok"}`; `/docs` lists every endpoint.
 
-Cloud Run scales to zero when idle, so the first request after a quiet period pays a cold start of a few seconds (`--min-instances 1` removes it, at a cost). The container runs uvicorn as its main process, so it shuts down cleanly when Cloud Run stops an instance.
+The Docker runtime is used rather than Render's native Python build because dependencies are managed with uv, not a `requirements.txt`.
+
+Render's free instances **sleep after 15 minutes without traffic**, and the first request after that takes about a minute while the service wakes up; the frontend is designed to show a "waking up the server" message when a request runs long. The container runs uvicorn as its main process, so it shuts down cleanly when Render stops or redeploys the service.
 
 ---
 
@@ -346,7 +347,8 @@ Assumptions:
 Choices made during the build, beyond or different from the original design:
 
 **Platform and tooling**
-- The API deploys to **Google Cloud Run** (Docker, `$PORT`) rather than Render.
+- The API deploys to **Render using its Docker runtime** (the `Dockerfile`), rather than Render's native Python build with `pip install -r requirements.txt`, because dependencies are managed with uv. A move to Google Cloud Run was tried and dropped when its source deploy failed on an Artifact Registry permission.
+- `DATABASE_URL` accepts Supabase's `postgresql://` string as-is; the app switches it to the psycopg driver.
 - Dependencies are managed with **uv** and `pyproject.toml` on Python 3.13, rather than pip, `requirements.txt` and 3.12. `uv.lock` and `.python-version` are not committed, so builds resolve the latest compatible versions.
 - This repo is backend-only; `docker-compose.yml` runs the database and the API. The frontend lives in its own repo.
 - There is no migration tool: `schema.sql` is the single source of the database structure, run once by hand in Supabase and loaded automatically by Docker locally.
@@ -388,7 +390,8 @@ Choices made during the build, beyond or different from the original design:
 - **Trust model:** anyone with the link can claim for anyone.
 - **Accounts:** no password reset, a JWT can't be revoked before it expires, no rate limiting, and login doesn't equalise timing for unknown usernames, so response time could hint whether a username exists.
 - **Live updates:** polling every 3 seconds rather than push.
-- **Cold starts:** Cloud Run scales to zero, so the first request after idling is slower.
+- **Cold starts:** Render's free tier sleeps after 15 minutes idle and takes about a minute to wake; there is no keep-warm job.
+- **Distance to the database:** Render has no Tokyo region, so the API (Singapore) and Supabase (Tokyo) are one short hop apart; an unchanged poll measured about 350 ms end to end from the developer's machine.
 - **Supabase free plan:** projects can be paused after inactivity.
 - **Gemini free tier:** inputs may be used by Google to improve its products, and `gemini-3.5-flash` allows only **5 requests per minute per project** — the sixth quick extraction returns `LLM_QUOTA_EXCEEDED` until the minute passes.
 - **One receipt per bill**, INR only, no PDFs.
@@ -438,6 +441,5 @@ samples/               sample receipts and their expected LLM output
 tests/                 split, validation, extraction, auth and bill tests
 Dockerfile
 docker-compose.yml
-.gcloudignore          keeps secrets and tests out of the Cloud Run upload
 .env.example
 ```
