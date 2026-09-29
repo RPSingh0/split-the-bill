@@ -1,0 +1,7 @@
+.gcloudignore
+.git
+.gitignore
+.env
+.venv
+tests/
+#!include:.gitignore

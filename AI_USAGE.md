@@ -59,4 +59,4 @@ The installed `openai` (3.x) and `google-genai` (2.x) SDKs were newer major vers
 | Every endpoint | Scripts against real Postgres in Docker |
 | Unit cap and 10-person cap under load | Parallel requests against a running server |
 | The requests the SDKs actually send | Both providers run against a mocked HTTP transport |
-| A real extraction with a live key | To be done after deployment |
+| Real extractions with live keys | Both providers on the sample receipts as text and as images, a non-receipt, a prompt-injection attempt, a printed tip and invalid keys — all matched the expected output — then the whole bill flow on the real Supabase database, with a server-log scan confirming no key or secret was logged |

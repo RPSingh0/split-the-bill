@@ -79,6 +79,7 @@ class GeminiProvider:
             system_instruction=PROMPT,
             response_mime_type="application/json",
             response_schema=ReceiptExtraction,
+            automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
         )
 
         try:
