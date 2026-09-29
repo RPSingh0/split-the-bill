@@ -99,10 +99,10 @@ docker compose run --rm backend uv run --no-sync pytest
 | Variable | Required | Notes |
 |---|---|---|
 | `FASTAPI_API_KEY` | Yes | Shared secret; the same value is set on Vercel. Never `NEXT_PUBLIC_`. |
-| `DATABASE_URL` | Yes | SQLAlchemy URL, e.g. `postgresql+psycopg://…`. In production, Supabase's **session pooler** string. |
+| `DATABASE_URL` | Yes | In production, Supabase's **session pooler** string, pasted as-is. A `postgresql://…` URL is switched to the psycopg driver automatically; `postgresql+psycopg://…` works too. |
 | `JWT_SECRET` | Yes | Long random string (32+ bytes) for signing host tokens. |
 | `OPENAI_MODEL` | No | Defaults to `gpt-5.4-mini`. |
-| `GEMINI_MODEL` | No | Defaults to `gemini-3.5-flash` (e.g. `gemini-3.5-flash-lite` for higher free-tier limits). |
+| `GEMINI_MODEL` | No | Defaults to `gemini-3.5-flash` (e.g. `gemini-3.5-flash-lite` for a smaller, cheaper model). |
 
 No LLM key appears anywhere in the environment.
 
@@ -110,22 +110,26 @@ No LLM key appears anywhere in the environment.
 
 ## Deploying to Cloud Run
 
-1. **Supabase** — create a project (Singapore region), run [`schema.sql`](schema.sql) once in the SQL editor, and copy the **session pooler** connection string (IPv4, port 5432). Change the scheme to `postgresql+psycopg://`.
-2. **Cloud Run** — deploy from source; the [`Dockerfile`](Dockerfile) listens on `$PORT`:
+This deployment's Supabase project is in **Tokyo** (`ap-northeast-1`), so the API runs in the matching Cloud Run region, **`asia-northeast1`**. Keeping the API next to the database matters: every poll makes a few small queries.
+
+1. **Supabase** — run [`schema.sql`](schema.sql) once in the SQL editor, and copy the **session pooler** connection string (IPv4, port 5432). It can be used exactly as Supabase gives it.
+2. **Cloud Run** — deploy from source; Cloud Build builds the [`Dockerfile`](Dockerfile), which starts uvicorn on `$PORT`:
 
    ```bash
    gcloud run deploy split-the-bill-api \
      --source . \
-     --region asia-southeast1 \
+     --region asia-northeast1 \
      --allow-unauthenticated \
      --set-env-vars FASTAPI_API_KEY=<secret>,JWT_SECRET=<secret>,DATABASE_URL=<supabase-session-pooler-url>
    ```
 
-   `--allow-unauthenticated` is needed because Vercel calls the service directly; access is protected by `X-API-Key` instead. Secrets can also be moved to Secret Manager with `--set-secrets`.
-3. **Vercel** — set `FASTAPI_URL` to the Cloud Run URL and `FASTAPI_API_KEY` to the same secret.
+   - `--allow-unauthenticated` is needed because Vercel calls the service directly; access is protected by `X-API-Key` instead.
+   - If a value contains a comma, pass the variables with `--env-vars-file` instead. Secrets can also be moved to Secret Manager with `--set-secrets`.
+   - [`.gcloudignore`](.gcloudignore) keeps `.env`, the virtualenv, the tests and everything git ignores out of the upload.
+3. **Vercel** — set `FASTAPI_URL` to the Cloud Run URL and `FASTAPI_API_KEY` to the same secret. Put the Vercel functions in the same area (Tokyo, `hnd1`).
 4. **Smoke test** — `GET <cloud-run-url>/health` returns `{"status":"ok"}`; `/docs` lists every endpoint.
 
-Cloud Run scales to zero when idle, so the first request after a quiet period pays a cold start of a few seconds (`--min-instances 1` removes it, at a cost).
+Cloud Run scales to zero when idle, so the first request after a quiet period pays a cold start of a few seconds (`--min-instances 1` removes it, at a cost). The container runs uvicorn as its main process, so it shuts down cleanly when Cloud Run stops an instance.
 
 ---
 
@@ -386,7 +390,7 @@ Choices made during the build, beyond or different from the original design:
 - **Live updates:** polling every 3 seconds rather than push.
 - **Cold starts:** Cloud Run scales to zero, so the first request after idling is slower.
 - **Supabase free plan:** projects can be paused after inactivity.
-- **Gemini free tier:** inputs may be used by Google to improve its products.
+- **Gemini free tier:** inputs may be used by Google to improve its products, and `gemini-3.5-flash` allows only **5 requests per minute per project** — the sixth quick extraction returns `LLM_QUOTA_EXCEEDED` until the minute passes.
 - **One receipt per bill**, INR only, no PDFs.
 - The uvicorn access log keeps its default format (client IP, method, path and status — never headers or bodies).
 
@@ -434,5 +438,6 @@ samples/               sample receipts and their expected LLM output
 tests/                 split, validation, extraction, auth and bill tests
 Dockerfile
 docker-compose.yml
+.gcloudignore          keeps secrets and tests out of the Cloud Run upload
 .env.example
 ```

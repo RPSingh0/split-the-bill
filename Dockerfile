@@ -9,4 +9,4 @@ RUN uv sync --no-install-project
 
 COPY . .
 
-CMD uv run --no-sync uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+CMD exec /opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
