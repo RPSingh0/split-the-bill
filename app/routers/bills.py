@@ -1,12 +1,12 @@
 import secrets
-import uuid
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, Header
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.auth import current_user, user_from_header
+from app.auth import current_user
+from app.bill_access import find_bill, find_me, host_participant, load_full_bill
 from app.bill_view import build_bill_view
 from app.db import get_db
 from app.errors import ApiError
@@ -87,63 +87,6 @@ def new_bill(receipt, user, slug):
     bill.participants.append(Participant(display_name=user.username, name_key=user.username, user_id=user.id))
 
     return bill
-
-
-def find_bill(db, slug):
-    bill = db.scalar(select(Bill).where(Bill.slug == slug))
-    if bill is None:
-        raise ApiError(404, "BILL_NOT_FOUND", "This bill link doesn't exist")
-
-    return bill
-
-
-def load_full_bill(db, slug):
-    query = (
-        select(Bill)
-        .where(Bill.slug == slug)
-        .options(
-            selectinload(Bill.items).selectinload(BillItem.claims),
-            selectinload(Bill.charges),
-            selectinload(Bill.participants),
-            selectinload(Bill.owner),
-        )
-    )
-
-    return db.scalar(query)
-
-
-def host_participant(db, bill):
-    query = select(Participant).where(Participant.bill_id == bill.id, Participant.user_id == bill.owner_id)
-
-    return db.scalar(query)
-
-
-def participant_from_header(db, bill, header):
-    if header is None:
-        return None
-
-    try:
-        participant_id = uuid.UUID(header)
-    except ValueError:
-        return None
-
-    participant = db.get(Participant, participant_id)
-    if participant is None or participant.bill_id != bill.id:
-        return None
-
-    return participant
-
-
-def find_me(db, bill, authorization, participant_header):
-    user = user_from_header(authorization, db)
-    if user is not None and user.id == bill.owner_id:
-        return host_participant(db, bill)
-
-    participant = participant_from_header(db, bill, participant_header)
-    if participant is None:
-        raise ApiError(403, "NOT_A_PARTICIPANT", "You're not on this bill")
-
-    return participant
 
 
 def bill_summary(bill):
