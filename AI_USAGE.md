@@ -15,7 +15,7 @@ How AI tools were used to build this backend, what I did myself, and where the A
 - **Plan, approve, then code.** For each feature, Claude wrote a plan (files, functions, edge cases, tests). I reviewed it, asked questions or changed it, and only after my approval did Claude create a feature branch and write the code.
 - **One branch per feature, commits by me.** Claude never committed or pushed. I reviewed each branch, committed it and merged it, so the history is one reviewed branch per feature.
 - **Rules I set for the code:** no code before approval; the simplest possible code — no comprehensions, generator expressions or lambdas, small single-purpose functions, blank lines between steps, no comments in code files.
-- **Decisions I made:** deploy on Google Cloud Run instead of Render; uv and `pyproject.toml` instead of pip; fix the printed-tip bug (below); keep plain SDK calls for the LLM but record that LangChain would have avoided vendor lock-in.
+- **Decisions I made:** the hosting choice (Google Cloud Run, then back to Render — below); uv and `pyproject.toml` instead of pip; fix the printed-tip bug (below); keep plain SDK calls for the LLM but record that LangChain would have avoided vendor lock-in.
 - **Verification beyond unit tests:** Claude ran throwaway scripts against a real Postgres in Docker for every endpoint, including parallel requests, and ran both LLM providers against a mocked HTTP layer to check the exact requests the SDKs send.
 
 ## Where the AI got it wrong
@@ -41,7 +41,7 @@ Claude's first version of the split (`app/split.py`) used list and dict comprehe
 
 ### 3. Smaller corrections
 
-- **Hosting.** The spec (also AI-generated) named Render for the API. I corrected it to Google Cloud Run; the Dockerfile already listened on `$PORT`, so nothing had to change.
+- **Hosting.** The spec (also AI-generated) named Render for the API. I first moved it to Google Cloud Run, but deploying from source failed: Cloud Build wasn't allowed to push the image to the auto-created Artifact Registry repository. I went back to Render and deployed the same Dockerfile with Render's Docker runtime. Because the container listens on whatever `$PORT` the platform gives it, the same image works on both.
 - **Temperature.** The spec asked for temperature 0 on both providers. When Claude checked the current docs, it found that Gemini 3 deprecates sampling parameters and Google warns that low values can make it loop, so Gemini now runs without a temperature setting while OpenAI keeps `temperature=0`.
 
 ### Something the AI did to avoid mistakes
@@ -60,3 +60,4 @@ The installed `openai` (3.x) and `google-genai` (2.x) SDKs were newer major vers
 | Unit cap and 10-person cap under load | Parallel requests against a running server |
 | The requests the SDKs actually send | Both providers run against a mocked HTTP transport |
 | Real extractions with live keys | Both providers on the sample receipts as text and as images, a non-receipt, a prompt-injection attempt, a printed tip and invalid keys — all matched the expected output — then the whole bill flow on the real Supabase database, with a server-log scan confirming no key or secret was logged |
+| The live deployment on Render | The same extraction cases and full bill flow against the deployed URL, plus 9 parallel claims on a 3-unit item through Supabase's connection pooler: exactly 3 succeeded; test data deleted afterwards |
