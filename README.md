@@ -4,8 +4,9 @@ FastAPI service behind **Split the Bill**: a host photographs (or pastes) a rest
 
 | | |
 |---|---|
+| Live app | <https://split-the-bill-platform.vercel.app> |
 | Live API | <https://split-the-bill-api.onrender.com> — interactive docs at [`/docs`](https://split-the-bill-api.onrender.com/docs) |
-| Frontend repo | `<frontend-repo-url>` *(filled in after deployment)* |
+| Frontend repo | [RPSingh0/split-the-bill-platform](https://github.com/RPSingh0/split-the-bill-platform) (Next.js on Vercel) |
 | AI usage notes | [AI_USAGE.md](AI_USAGE.md) |
 
 ---
@@ -130,7 +131,7 @@ The API runs as a Render **web service** built from the [`Dockerfile`](Dockerfil
 
 The Docker runtime is used rather than Render's native Python build because dependencies are managed with uv, not a `requirements.txt`.
 
-Render's free instances **sleep after 15 minutes without traffic**, and the first request after that takes about a minute while the service wakes up; the frontend is designed to show a "waking up the server" message when a request runs long. The container runs uvicorn as its main process, so it shuts down cleanly when Render stops or redeploys the service.
+Render's free instances **sleep after 15 minutes without traffic**, and the first request after that takes about a minute while the service wakes up; the frontend shows a "waking up the server" message when a request runs long. The container runs uvicorn as its main process, so it shuts down cleanly when Render stops or redeploys the service.
 
 ---
 
