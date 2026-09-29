@@ -1,0 +1,18 @@
+THE CURRY LEAF
+Indiranagar, Bengaluru
+Date: 28/09/2026   Table: 7   Bill No: 4521
+------------------------------------------
+Item                  Qty   Rate    Amount
+Butter Naan            4    60.00   240.00
+Paneer Tikka Masala    1   320.00   320.00
+Dal Makhani            1   260.00   260.00
+Jeera Rice             2   180.00   360.00
+Sweet Lime Soda        3    90.00   270.00
+------------------------------------------
+Sub Total                          1450.00
+Discount 10%                       -145.00
+CGST 2.5%                            32.63
+SGST 2.5%                            32.63
+Round Off                            -0.26
+------------------------------------------
+GRAND TOTAL                        1370.00

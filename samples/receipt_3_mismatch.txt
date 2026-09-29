@@ -1,0 +1,17 @@
+BELLA NAPOLI PIZZERIA
+Koramangala, Bengaluru
+Date: 27/09/2026   Bill No: 1187
+----------------------------------------
+Item                 Qty   Rate   Amount
+Margherita Pizza      1   450.00  450.00
+Garlic Bread          1   180.00  180.00
+Penne Arrabbiata      1   380.00  380.00
+Iced Tea              2    60.00  120.00
+----------------------------------------
+Sub Total                        1180.00
+Service Charge 10%                118.00
+CGST 2.5%                          32.45
+SGST 2.5%                          32.45
+Round Off                          +0.10
+----------------------------------------
+TOTAL                            1363.00
