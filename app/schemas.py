@@ -88,6 +88,15 @@ class BillCreate(BaseModel):
     tip_percent: Decimal | None = None
 
 
+class JoinRequest(BaseModel):
+    name: str
+    confirm: bool = False
+
+
+class ClaimRequest(BaseModel):
+    units: int
+
+
 class BillSummary(BaseModel):
     slug: str
     merchant: str | None

@@ -10,6 +10,7 @@ from app.config import settings
 from app.errors import ApiError
 from app.logging_setup import setup_logging
 from app.routers.auth import router as auth_router
+from app.routers.bill_actions import router as bill_actions_router
 from app.routers.bills import router as bills_router
 from app.routers.extract import router as extract_router
 
@@ -62,3 +63,4 @@ def health():
 app.include_router(auth_router, dependencies=[Depends(require_api_key)])
 app.include_router(extract_router, dependencies=[Depends(require_api_key)])
 app.include_router(bills_router, dependencies=[Depends(require_api_key)])
+app.include_router(bill_actions_router, dependencies=[Depends(require_api_key)])
